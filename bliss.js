@@ -46,8 +46,37 @@ extend($, {
 			return [expr];
 		}
 
-		// In the future, we should use Array.from() instead of Array.prototype.slice.call()
-		return Array.prototype.slice.call(typeof expr == "string"? (context || document).querySelectorAll(expr) : expr || []);
+		// Default method is querySelectorAll:
+		var method = 'querySelectorAll';
+
+		// For simple (single selector) queries,
+		// use faster DOM methods:
+		if (typeof expr == "string" && expr.indexOf(' ') === -1) {
+			switch (expr.charAt(0)) {
+				case '.':
+					expr = expr.slice(1);
+					method = 'getElementsByClassName';
+					break;
+				case '#':
+					context = document;
+					expr = expr.slice(1);
+					method = 'getElementById';
+					break;
+				default:
+					method = 'getElementsByTagName';
+					break;
+			}
+		}
+
+		var result = typeof expr == "string" ? (context || document)[method](expr) : expr || [];
+
+		if (result instanceof Element) {
+			return [result];
+		}
+		else {
+			// In the future, we should use Array.from() instead of Array.prototype.slice.call()
+			return Array.prototype.slice.call(result);
+		}
 	},
 
 	/**
